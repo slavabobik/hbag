@@ -84,10 +84,6 @@ func (h *hbag[K]) Clear() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	// TODO what if other gorutines still read from oldest map?
-	//h.multiset = make(map[K]uint64, h.capacity) is it better that clear
-	// what about capacity? add to comment that Clear() hold the memory?
-
 	clear(h.multiset)
 	h.count = 0
 }
