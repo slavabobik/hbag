@@ -2,6 +2,8 @@
 Inspired by [Jon Gjengset's](https://github.com/jonhoo) [hashbag](https://github.com/jonhoo/hashbag) implementation in Rust.
 
 ![build workflow](https://github.com/slavabobik/hbag/actions/workflows/go.yml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/slavabobik/hbag)](https://goreportcard.com/report/github.com/slavabobik/hbag)
+[![Go Reference](https://pkg.go.dev/badge/github.com/slavabobik/hbag.svg)](https://pkg.go.dev/github.com/slavabobik/hbag)
 
 ## Installation
 
