@@ -306,3 +306,145 @@ func TestHBag_IsUniq(t *testing.T) {
 		})
 	}
 }
+
+func TestHBag_Merge(t *testing.T) {
+	tests := []struct {
+		name            string
+		bag1Entries     map[string]uint64
+		bag2Entries     map[string]uint64
+		expectedEntries map[string]uint64
+		expectedLen     uint64
+		expectedUniqLen uint64
+	}{
+		{
+			name:            "Merge empty bags",
+			bag1Entries:     nil,
+			bag2Entries:     nil,
+			expectedEntries: map[string]uint64{},
+			expectedLen:     0,
+			expectedUniqLen: 0,
+		},
+		{
+			name:        "Merge empty into non-empty",
+			bag1Entries: map[string]uint64{"apple": 1, "banana": 2},
+			bag2Entries: nil,
+			expectedEntries: map[string]uint64{
+				"apple":  1,
+				"banana": 2,
+			},
+			expectedLen:     3,
+			expectedUniqLen: 2,
+		},
+		{
+			name:        "Merge non-empty into empty",
+			bag1Entries: nil,
+			bag2Entries: map[string]uint64{"apple": 1, "banana": 2},
+			expectedEntries: map[string]uint64{
+				"apple":  1,
+				"banana": 2,
+			},
+			expectedLen:     3,
+			expectedUniqLen: 2,
+		},
+		{
+			name: "Merge with no overlapping elements",
+			bag1Entries: map[string]uint64{
+				"apple":  1,
+				"banana": 2,
+			},
+			bag2Entries: map[string]uint64{
+				"cherry": 3,
+				"date":   1,
+			},
+			expectedEntries: map[string]uint64{
+				"apple":  1,
+				"banana": 2,
+				"cherry": 3,
+				"date":   1,
+			},
+			expectedLen:     7,
+			expectedUniqLen: 4,
+		},
+		{
+			name: "Merge with overlapping elements",
+			bag1Entries: map[string]uint64{
+				"apple":  2,
+				"banana": 1,
+				"cherry": 3,
+			},
+			bag2Entries: map[string]uint64{
+				"apple":  1,
+				"banana": 2,
+				"date":   1,
+			},
+			expectedEntries: map[string]uint64{
+				"apple":  3,
+				"banana": 3,
+				"cherry": 3,
+				"date":   1,
+			},
+			expectedLen:     10,
+			expectedUniqLen: 4,
+		},
+		{
+			name: "Merge with large counts",
+			bag1Entries: map[string]uint64{
+				"apple": 1000000,
+			},
+			bag2Entries: map[string]uint64{
+				"apple": 1000000,
+			},
+			expectedEntries: map[string]uint64{
+				"apple": 2000000,
+			},
+			expectedLen:     2000000,
+			expectedUniqLen: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Initialize the first bag
+			bag1 := New[string]()
+			for k, v := range tt.bag1Entries {
+				bag1.InsertMany(k, v)
+			}
+
+			// Initialize the second bag
+			bag2 := New[string]()
+			for k, v := range tt.bag2Entries {
+				bag2.InsertMany(k, v)
+			}
+
+			// Perform the merge operation
+			bag1.Merge(bag2)
+
+			// Check the total length of the merged bag
+			require.Equal(t, tt.expectedLen, bag1.Len(), "Total length should match expected")
+
+			// Check the unique length of the merged bag
+			require.Equal(t, tt.expectedUniqLen, bag1.UniqLen(), "Unique length should match expected")
+
+			// Verify all expected entries are present with correct counts
+			for k, expectedCount := range tt.expectedEntries {
+				actualCount, found := bag1.Contains(k)
+				require.True(t, found, "Expected key %s should be present", k)
+				require.Equal(t, expectedCount, actualCount, "Count for key %s should match expected", k)
+			}
+
+			// Verify no unexpected entries are present
+			for k, v := range bag1.multiset {
+				expectedCount, exists := tt.expectedEntries[k]
+				require.True(t, exists, "Unexpected key %s found in result", k)
+				require.Equal(t, expectedCount, v, "Unexpected count for key %s", k)
+			}
+
+			// Verify the second bag remains unchanged
+			for k, expectedCount := range tt.bag2Entries {
+				actualCount, found := bag2.Contains(k)
+				require.True(t, found, "Original key in second bag should still be present")
+				require.Equal(t, expectedCount, actualCount, "Count in second bag should not change")
+			}
+		})
+	}
+}

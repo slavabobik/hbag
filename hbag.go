@@ -135,3 +135,19 @@ func (h *hbag[K]) IsUniq() bool {
 
 	return h.count == uint64(len(h.multiset))
 }
+
+// Merge combines the elements from the other bag into this bag.
+// For each element in other, its count is added to the count in this bag.
+// The other bag remains unchanged.
+func (h *hbag[K]) Merge(other *hbag[K]) {
+	h.mu.Lock()
+	other.mu.RLock()
+	defer h.mu.Unlock()
+	defer other.mu.RUnlock()
+
+	// Add all elements from the other bag
+	for k, v := range other.multiset {
+		h.multiset[k] += v
+		h.count += v
+	}
+}
